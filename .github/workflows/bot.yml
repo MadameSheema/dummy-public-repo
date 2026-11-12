@@ -1,0 +1,61 @@
+# Dummy bot for the layer 2 tests of the QA metrics POC. Lives in the public dummy repo only.
+# It does nothing on its own: it runs only when started by hand (workflow_dispatch) by the seed script, and it can only
+# close one issue or swap one label on one issue of this repository. Its actions appear on GitHub as github-actions[bot].
+name: Dummy bot
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number (digits only)
+        required: true
+        type: string
+      action:
+        description: What the bot does
+        required: true
+        type: choice
+        options:
+          - close
+          - swap-label
+      reason:
+        description: Close reason (only for close)
+        required: false
+        default: completed
+        type: choice
+        options:
+          - completed
+          - not planned
+      remove:
+        description: Label to remove (only for swap-label)
+        required: false
+        type: string
+      add:
+        description: Label to add (only for swap-label)
+        required: false
+        type: string
+permissions:
+  issues: write
+jobs:
+  act:
+    runs-on: ubuntu-latest
+    steps:
+      # Inputs go through environment variables, never straight into the script (avoids script injection).
+      - name: Check the issue number
+        env:
+          ISSUE: ${{ inputs.issue }}
+        run: |
+          case "$ISSUE" in ''|*[!0-9]*) echo "The issue must be a number"; exit 1;; esac
+      - name: Close the issue
+        if: ${{ inputs.action == 'close' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ inputs.issue }}
+          REASON: ${{ inputs.reason }}
+        run: gh issue close "$ISSUE" --reason "$REASON" --repo "$GITHUB_REPOSITORY"
+      - name: Swap the label
+        if: ${{ inputs.action == 'swap-label' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ inputs.issue }}
+          REMOVE: ${{ inputs.remove }}
+          ADD: ${{ inputs.add }}
+        run: gh issue edit "$ISSUE" --remove-label "$REMOVE" --add-label "$ADD" --repo "$GITHUB_REPOSITORY"
