@@ -1,0 +1,17 @@
+name: Bug report
+description: Report a bug
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Kibana/Elasticsearch Stack version
+      description: The version where you found the bug, for example 1.1.1 or main
+    validations:
+      required: false
+  - type: textarea
+    id: description
+    attributes:
+      label: Description of the problem
+    validations:
+      required: true
